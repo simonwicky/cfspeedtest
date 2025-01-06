@@ -3,6 +3,7 @@ use cfspeedtest::OutputFormat;
 use cfspeedtest::SpeedTestCLIOptions;
 use clap::Parser;
 use std::net::IpAddr;
+use std::time::Duration;
 
 use speedtest::speed_test;
 
@@ -12,20 +13,19 @@ fn main() {
     if options.output_format == OutputFormat::StdOut {
         println!("Starting Cloudflare speed test");
     }
-    let client;
+
+    let mut client_builder = reqwest::blocking::Client::builder();
     if options.ipv4 {
-        client = reqwest::blocking::Client::builder()
-            .local_address("0.0.0.0".parse::<IpAddr>().unwrap())
-            .build();
+        client_builder = client_builder.local_address("0.0.0.0".parse::<IpAddr>().unwrap());
     } else if options.ipv6 {
-        client = reqwest::blocking::Client::builder()
-            .local_address("::1".parse::<IpAddr>().unwrap())
-            .build();
-    } else {
-        client = reqwest::blocking::Client::builder().build();
+        client_builder = client_builder.local_address("::1".parse::<IpAddr>().unwrap());
     }
-    speed_test(
-        client.expect("Failed to initialize reqwest client"),
-        options,
-    );
+    if let Some(timeout_secs) = options.timeout_secs {
+        client_builder = client_builder.timeout(Some(Duration::from_secs(timeout_secs)));
+    }
+
+    let client = client_builder
+        .build()
+        .expect("Failed to initialize reqwest client");
+    speed_test(client, options);
 }

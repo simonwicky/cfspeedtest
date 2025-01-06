@@ -80,6 +80,10 @@ pub struct SpeedTestCLIOptions {
     /// Test upload speed only
     #[arg(long, conflicts_with = "download_only")]
     pub upload_only: bool,
+
+    /// Custom timeout
+    #[arg(short, long)]
+    pub timeout_secs: Option<u64>,
 }
 
 impl SpeedTestCLIOptions {
